@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/songs")
 public class SongController {
-
-    @Autowired
-    private SongService songService;
+    private final SongService songService;
 
     @GetMapping
     public ResponseEntity<String> getAllSongs() {
