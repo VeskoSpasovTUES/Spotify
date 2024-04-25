@@ -4,7 +4,7 @@ import com.example.user.dto.SongDTO;
 import com.example.user.entity.User;
 import com.example.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -20,6 +20,7 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
     @Value("${song.service.url}")
     private String songServiceUrl;
     @Value("${playlist.service.url}")
@@ -129,5 +130,59 @@ public class UserController {
     @DeleteMapping("/{userId}/songs/{songId}")
     public void removeUserSong(@RequestParam String userId, @RequestParam String songId) {
         userService.removeUserSong(userId, songId);
+    }
+
+    @GetMapping("/{userId}/artists")
+    public ResponseEntity<String> getUserArtists(@RequestParam String userId) {
+        try {
+            return ResponseEntity.ok(userService.getUserArtists(userId).toString());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    "no such user found!"
+            );
+        }
+    }
+
+    @PostMapping("/{userId}/artists/{artistId}")
+    public ResponseEntity<String> addUserArtist(@RequestParam String userId, @RequestParam String artistId) {
+        try {
+            return ResponseEntity.ok(userService.addUserArtist(userId, artistId).toString());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    "no such user or artist found!"
+            );
+        }
+    }
+
+    @DeleteMapping("/{userId}/artists/{artistId}")
+    public void removeUserArtist(@RequestParam String userId, @RequestParam String artistId) {
+        userService.removeUserArtist(userId, artistId);
+    }
+
+    @PostMapping("/{userId}/playlists/{playlistId}/songs/{songId}")
+    public ResponseEntity<String> addSongToPlaylist(@RequestParam String userId, @RequestParam String playlistId, @RequestParam String songId) {
+        try {
+            return ResponseEntity.ok(userService.addSongToPlaylist(userId, playlistId, songId).toString());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    "no such user or playlist or song found!"
+            );
+        }
+    }
+
+    @DeleteMapping("/{userId}/playlists/{playlistId}/songs/{songId}")
+    public void removeSongFromPlaylist(@RequestParam String userId, @RequestParam String playlistId, @RequestParam String songId) {
+        userService.removeSongFromPlaylist(userId, playlistId, songId);
+    }
+
+    @GetMapping("/{userId}/playlists/{playlistId}/songs")
+    public ResponseEntity<String> getPlaylistSongs(@RequestParam String userId, @RequestParam String playlistId) {
+        try {
+            return ResponseEntity.ok(userService.getPlaylistSongs(userId, playlistId).toString());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    "no such user or playlist found!"
+            );
+        }
     }
 }
