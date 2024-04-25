@@ -10,8 +10,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -35,8 +33,8 @@ public class SongService {
         return new ResponseEntity<>(songsJson, HttpStatus.OK);
     }
 
-    public ResponseEntity<String> getSongById(Long songId) {
-        Optional<Song> songOptional = songRepository.findById(songId);
+    public ResponseEntity<String> getSongById(String songId) {
+        Optional<Song> songOptional = songRepository.findById(Long.parseLong(songId));
         if (songOptional.isPresent()) {
             Song song = songOptional.get();
 
@@ -79,9 +77,9 @@ public class SongService {
         }
     }
 
-    public ResponseEntity<String> updateSong(Long songId, String updatedSongDetails) {
+    public ResponseEntity<String> updateSong(String songId, String updatedSongDetails) {
 
-        Optional<Song> songOptional = songRepository.findById(songId);
+        Optional<Song> songOptional = songRepository.findById(Long.parseLong(songId));
         if (!songOptional.isPresent()) {
             return new ResponseEntity<>("Song not found", HttpStatus.NOT_FOUND);
         }
@@ -116,12 +114,12 @@ public class SongService {
         }
     }
 
-    public void deleteSong(Long songId) {
-        songRepository.deleteById(songId);
+    public void deleteSong(String songId) {
+        songRepository.deleteById(Long.parseLong(songId));
     }
 
     public List<Song> getUserSongs(String userId) throws JsonProcessingException {
-        String url = userServiceUrl + "/" + userId + "/associatedSongs"; // Assuming endpoint in UserService
+        String url = userServiceUrl + "/" + userId + "/associatedSongs";
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
