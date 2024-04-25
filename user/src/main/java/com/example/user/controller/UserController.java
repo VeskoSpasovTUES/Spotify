@@ -4,8 +4,8 @@ import com.example.user.dto.SongDTO;
 import com.example.user.entity.User;
 import com.example.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -18,9 +18,7 @@ import org.springframework.web.client.RestTemplate;
 @RequestMapping("/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
-
+    private final UserService userService;
     @Value("${song.service.url}")
     private String songServiceUrl;
     @Value("${playlist.service.url}")
