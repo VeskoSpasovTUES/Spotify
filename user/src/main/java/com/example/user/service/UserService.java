@@ -1,12 +1,9 @@
 package com.example.user.service;
 
-import com.example.user.dto.SongDTO;
 import org.springframework.beans.factory.annotation.Value;
-import com.example.user.entity.Role;
 import com.example.user.entity.User;
 import com.example.user.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -31,6 +27,8 @@ public class UserService {
     private String songServiceUrl;
     @Value("${playlist.service.url}")
     private String playlistServiceUrl;
+    @Value("${artist.service.url}")
+    private String artistServiceUrl;
 
     public ResponseEntity<String> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -115,19 +113,16 @@ public class UserService {
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
-            // Handle PlaylistService response
             if (response.getStatusCode() == HttpStatus.OK) {
-                return response; // Return the playlist data from PlaylistService
+                return response;
             } else {
                 return new ResponseEntity<>("Error retrieving user playlists: " + response.getStatusCodeValue(), response.getStatusCode());
             }
 
         } catch (RestClientResponseException e) {
-            // Handle specific REST client exceptions (e.g., connection errors)
             return new ResponseEntity<>("Error communicating with Playlist Service", HttpStatus.INTERNAL_SERVER_ERROR);
 
         } catch (Exception e) {
-            // Handle other unexpected exceptions
             e.printStackTrace();
             return new ResponseEntity<>("Error retrieving user playlists", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -176,17 +171,6 @@ public class UserService {
         }
     }
 
-    private String convertSongsDtoToJson(List<SongDTO> userSongsDto) {
-        ObjectMapper mapper = new ObjectMapper();
-
-        try {
-            return mapper.writeValueAsString(userSongsDto);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "Error converting songs to JSON";
-        }
-    }
-
     public ResponseEntity<String> addUserSong(String userId, String songId) {
         String url = songServiceUrl + "/users/" + userId + "/songs/" + songId;
 
@@ -201,6 +185,113 @@ public class UserService {
 
     public void removeUserSong(String userId, String songId) {
         restTemplate.delete(songServiceUrl + "/users/" + userId + "/songs/" + songId);
+    }
+
+    public ResponseEntity<String> getUserArtists(String userId) {
+        String url = artistServiceUrl + "/users/" + userId + "/artists";
+
+        try {
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response;
+            } else {
+                return new ResponseEntity<>("Error retrieving user artists: " + response.getStatusCodeValue(), response.getStatusCode());
+            }
+
+        } catch (RestClientResponseException e) {
+            return new ResponseEntity<>("Error communicating with Artist Service", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Error retrieving user artists", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ResponseEntity<String> addUserArtist(String userId, String artistId) {
+        String url = artistServiceUrl + "/users/" + userId + "/artists/" + artistId;
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+
+            if (response.getStatusCode() == HttpStatus.CREATED) {
+                return new ResponseEntity<>("Artist added to user's profile", HttpStatus.CREATED);
+            } else {
+                return new ResponseEntity<>("Error adding artist: " + response.getStatusCodeValue(), response.getStatusCode());
+            }
+        } catch (RestClientResponseException e) {
+            return new ResponseEntity<>("Error communicating with Artist Service", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Error adding artist to user's profile", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public void removeUserArtist(String userId, String artistId) {
+        String url = artistServiceUrl + "/users/" + userId + "/artists/" + artistId;
+
+        try {
+            restTemplate.delete(url);
+
+        } catch (RestClientResponseException e) {
+            throw new RuntimeException("Error communicating with Artist Service", e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error removing artist from user", e);
+        }
+    }
+
+    public ResponseEntity<String> addSongToPlaylist(@RequestParam String userId, @RequestParam String playlistId, @RequestParam String songId) {
+        String url = playlistServiceUrl + "/users/" + userId + "/playlists/" + playlistId + "/songs/" + songId;
+
+        try {
+
+            ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+
+            if (response.getStatusCode() == HttpStatus.CREATED) {
+                return new ResponseEntity<>("Song added to playlist", HttpStatus.CREATED);
+            } else {
+                return new ResponseEntity<>("Error adding song: " + response.getStatusCodeValue(), response.getStatusCode());
+            }
+
+        } catch (RestClientResponseException e) {
+            return new ResponseEntity<>("Error communicating with Playlist Service", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Error adding song to playlist", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public void removeSongFromPlaylist(String userId, String playlistId, String songId) {
+        String url = playlistServiceUrl + "/users/" + userId + "/playlists/" + playlistId + "/songs/" + songId;
+
+        try {
+            restTemplate.delete(url);
+        } catch (RestClientResponseException e) {
+            throw new RuntimeException("Error communicating with Playlist Service", e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error removing song from playlist", e);
+        }
+    }
+
+    public ResponseEntity<String> getPlaylistSongs(String userId, String playlistId) {
+        String url = playlistServiceUrl + "/users/" + userId + "/playlists/" + playlistId + "/songs";
+
+        try {
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response;
+            } else {
+                return new ResponseEntity<>("Error retrieving playlist songs: " + response.getStatusCodeValue(), response.getStatusCode());
+            }
+
+        } catch (RestClientResponseException e) {
+            return new ResponseEntity<>("Error communicating with Playlist Service", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Error retrieving playlist songs", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
 
